@@ -7,90 +7,39 @@ from scipy.linalg import cholesky
 def load_data(uploaded_file):
     return pd.read_csv(uploaded_file)
 
-# Function to prepare draft results in numpy array format
-def prepare_draft_results(draft_results_df):
-    teams = draft_results_df['Team'].unique()
-    num_teams = len(teams)
-    draft_results = np.empty((num_teams, 6), dtype='U50')
-    player_positions = np.empty((num_teams, 6), dtype='U3')
-    player_teams = np.empty((num_teams, 6), dtype='U50')
+# Function to simulate projections for each player independently
+def simulate_individual_projections(projection_lookup, num_simulations):
+    simulations = {}
+    for player, (mean, std_dev) in projection_lookup.items():
+        simulations[player] = np.random.normal(mean, std_dev, num_simulations)
+    return simulations
 
-    for idx, team in enumerate(teams):
-        team_players = draft_results_df[draft_results_df['Team'] == team]
-        for i in range(1, 7):
-            draft_results[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Name']}"
-            player_positions[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Position']}"
-            player_teams[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Team']}"
-
-    return draft_results, player_positions, player_teams, teams
-
-# Function to create a correlation matrix
-def create_correlation_matrix(player_teams, player_positions):
-    num_players = player_teams.size
-    correlation_matrix = np.identity(num_players)
-    
-    for i in range(num_players):
-        for j in range(i + 1, num_players):
-            if player_teams.flat[i] == player_teams.flat[j]:
-                if player_positions.flat[i] == 'QB':
-                    if player_positions.flat[j] == 'WR':
-                        correlation_matrix[i, j] = 0.35
-                    elif player_positions.flat[j] == 'TE':
-                        correlation_matrix[i, j] = 0.25
-                    elif player_positions.flat[j] == 'RB':
-                        correlation_matrix[i, j] = 0.1
-                elif player_positions.flat[j] == 'QB':
-                    if player_positions.flat[i] == 'WR':
-                        correlation_matrix[i, j] = 0.35
-                    elif player_positions.flat[i] == 'TE':
-                        correlation_matrix[i, j] = 0.25
-                    elif player_positions.flat[i] == 'RB':
-                        correlation_matrix[i, j] = 0.1
-    
-    # Copy the upper triangle to the lower triangle
-    correlation_matrix += np.triu(correlation_matrix, 1).T
-
-    return correlation_matrix
-
-# Function to generate correlated projections
-def generate_correlated_projections(player_names, player_positions, player_teams, projection_lookup, correlation_matrix):
-    num_players = len(player_names)
-    mean = np.array([projection_lookup[name][0] for name in player_names])
-    std_dev = np.array([projection_lookup[name][1] for name in player_names])
-
-    cov_matrix = np.outer(std_dev, std_dev) * correlation_matrix
-    L = cholesky(cov_matrix, lower=True)
-
-    random_normals = np.random.normal(size=(num_players,))
-    correlated_projections = mean + L @ random_normals
-
-    return correlated_projections
-
-# Function to simulate team projections from draft results
-def simulate_team_projections(draft_results, player_positions, player_teams, projection_lookup, num_simulations):
+# Function to calculate team scores by summing player projections
+def calculate_team_scores(draft_results, player_simulations, num_simulations):
     num_teams = draft_results.shape[0]
-    total_points = np.zeros((num_teams, num_simulations))
+    team_scores = np.zeros((num_teams, num_simulations))
 
     for i in range(num_teams):
         team_player_names = draft_results[i]
-        team_player_positions = player_positions[i]
-        team_player_teams = player_teams[i]
-        correlation_matrix = create_correlation_matrix(team_player_teams, team_player_positions)
-        for sim in range(num_simulations):
-            total_points[i, sim] = np.sum(
-                generate_correlated_projections(team_player_names, team_player_positions, team_player_teams, projection_lookup, correlation_matrix)
-            )
+        for player in team_player_names:
+            team_scores[i] += player_simulations[player]
 
-    avg_points = np.mean(total_points, axis=1)
-    return avg_points
+    avg_scores = np.mean(team_scores, axis=1)
+    return avg_scores
 
 def run_simulation(num_simulations, draft_results_df, projection_lookup):
+    # Prepare draft results for each team
     draft_results, player_positions, player_teams, teams = prepare_draft_results(draft_results_df)
-    avg_points = simulate_team_projections(draft_results, player_positions, player_teams, projection_lookup, num_simulations)
+
+    # Simulate individual player projections
+    player_simulations = simulate_individual_projections(projection_lookup, num_simulations)
+
+    # Calculate team scores based on player simulations
+    avg_scores = calculate_team_scores(draft_results, player_simulations, num_simulations)
 
     final_results = pd.DataFrame({
         'Team': teams,
-        'Average Points': avg_points
+        'Average Points': avg_scores
     })
 
     return final_results
