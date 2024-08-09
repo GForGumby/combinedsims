@@ -154,9 +154,9 @@ if uploaded_draft_file is not None:
 
         if st.button("Run Projection Simulation"):
            # Function to run parallel simulations
-  def run_parallel_simulations(num_simulations, draft_results_df, projection_lookup):
-     draft_results, player_positions, player_teams, teams = prepare_draft_results(draft_results_df)
-    avg_payouts = simulate_team_projections(draft_results, player_positions, player_teams, projection_lookup, num_simulations)
+        def run_parallel_simulations(num_simulations, draft_results_df, projection_lookup):
+          draft_results, player_positions, player_teams, teams = prepare_draft_results(draft_results_df)
+          avg_payouts = simulate_team_projections(draft_results, player_positions, player_teams, projection_lookup, num_simulations)
 
           # Run simulations
             final_results = run_parallel_simulations(num_simulations, draft_results_df, projection_lookup)
