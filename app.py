@@ -126,7 +126,6 @@ elif page == "Projection Simulator":
             )
 elif page == "Page 2":
     page2()
-   import streamlit as st
 import pandas as pd
 from projections_sim import prepare_draft_results, run_parallel_simulations
 
