@@ -81,7 +81,7 @@ def run_simulations(df, num_simulations=10, num_teams=6, num_rounds=6, team_bonu
     return all_drafts
 
 # Streamlit app
-st.title('Fantasy Football Draft Simulator')
+st.title('Week 0 Test BR Draft Sim')
 
 # Download link for sample CSV
 sample_csv_path = 'adp sheet test.csv'
