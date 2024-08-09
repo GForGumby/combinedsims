@@ -154,7 +154,7 @@ def page2():
     st.title("Page 2")
     import streamlit as st
 import pandas as pd
-from projections_sim import prepare_draft_results, run_parallel_simulations
+from page2 import prepare_draft_results, run_parallel_simulations
 
 st.title('Fantasy Football Projection Simulator')
 
