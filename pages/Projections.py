@@ -24,34 +24,31 @@ def prepare_draft_results(draft_results_df):
 
     return draft_results, player_positions, player_teams, teams
 
-# Function to create a simplified correlation matrix based on real-life NFL teams and positions
+# Function to create a correlation matrix
 def create_correlation_matrix(player_teams, player_positions):
     num_players = player_teams.size
     correlation_matrix = np.identity(num_players)
-
+    
     for i in range(num_players):
         for j in range(i + 1, num_players):
             if player_teams.flat[i] == player_teams.flat[j]:
                 if player_positions.flat[i] == 'QB':
                     if player_positions.flat[j] == 'WR':
                         correlation_matrix[i, j] = 0.35
-                        correlation_matrix[j, i] = 0.35
                     elif player_positions.flat[j] == 'TE':
                         correlation_matrix[i, j] = 0.25
-                        correlation_matrix[j, i] = 0.25
                     elif player_positions.flat[j] == 'RB':
                         correlation_matrix[i, j] = 0.1
-                        correlation_matrix[j, i] = 0.1
                 elif player_positions.flat[j] == 'QB':
                     if player_positions.flat[i] == 'WR':
                         correlation_matrix[i, j] = 0.35
-                        correlation_matrix[j, i] = 0.35
                     elif player_positions.flat[i] == 'TE':
                         correlation_matrix[i, j] = 0.25
-                        correlation_matrix[j, i] = 0.25
                     elif player_positions.flat[i] == 'RB':
                         correlation_matrix[i, j] = 0.1
-                        correlation_matrix[j, i] = 0.1
+    
+    # Copy the upper triangle to the lower triangle
+    correlation_matrix += np.triu(correlation_matrix, 1).T
 
     return correlation_matrix
 
@@ -64,9 +61,8 @@ def generate_correlated_projections(player_names, player_positions, player_teams
     cov_matrix = np.outer(std_dev, std_dev) * correlation_matrix
     L = cholesky(cov_matrix, lower=True)
 
-    random_normals = np.random.normal(size=num_players)
-    correlated_normals = np.dot(L, random_normals)
-    correlated_projections = mean + correlated_normals
+    random_normals = np.random.normal(size=(num_players,))
+    correlated_projections = mean + L @ random_normals
 
     return correlated_projections
 
@@ -75,14 +71,15 @@ def simulate_team_projections(draft_results, player_positions, player_teams, pro
     num_teams = draft_results.shape[0]
     total_points = np.zeros((num_teams, num_simulations))
 
-    for sim in range(num_simulations):
-        for i in range(num_teams):
-            team_player_names = draft_results[i]
-            team_player_positions = player_positions[i]
-            team_player_teams = player_teams[i]
-            correlation_matrix = create_correlation_matrix(team_player_teams, team_player_positions)
-            correlated_projections = generate_correlated_projections(team_player_names, team_player_positions, team_player_teams, projection_lookup, correlation_matrix)
-            total_points[i, sim] = np.sum(correlated_projections)
+    for i in range(num_teams):
+        team_player_names = draft_results[i]
+        team_player_positions = player_positions[i]
+        team_player_teams = player_teams[i]
+        correlation_matrix = create_correlation_matrix(team_player_teams, team_player_positions)
+        for sim in range(num_simulations):
+            total_points[i, sim] = np.sum(
+                generate_correlated_projections(team_player_names, team_player_positions, team_player_teams, projection_lookup, correlation_matrix)
+            )
 
     avg_points = np.mean(total_points, axis=1)
     return avg_points
