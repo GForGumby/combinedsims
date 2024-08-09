@@ -188,23 +188,36 @@ if uploaded_draft_file is not None:
         if st.button("Run Projection Simulation", key="run_projection_sim"):
             # Run simulations
             final_results = run_parallel_simulations(num_simulations, draft_results_df, projection_lookup)
+import streamlit as st
+import pandas as pd
+import numpy as np
+from numba import jit
+from scipy.linalg import cholesky
 
-            # Display the results
-            if not final_results.empty:
-                st.dataframe(final_results, key="final_results_df")
+# ... (other parts of your code)
 
-  # Download link for the results
-                csv = final_results.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="Download Projection Results",
-                    data=csv,
-                    file_name='projection_results.csv',
-                    mime='text/csv',
-                    key="download_projection_results"
-                )
-            else:
-                st.error("No results were generated. Please check your input data and try again.")
-    else:
-        st.error("Please upload a custom projections CSV file to proceed.")
-else:
-    st.info("Please upload your draft results CSV file to start.")
+try:
+    # Check and display the inputs before calling the function
+    st.write("Number of simulations:", num_simulations)
+    st.write("Draft Results DataFrame head:", draft_results_df.head())
+    st.write("Projection Lookup sample:", list(projection_lookup.items())[:5])
+    
+    # Call the function
+    final_results = run_parallel_simulations(num_simulations, draft_results_df, projection_lookup)
+    
+    # Display the results
+    st.dataframe(final_results)
+    
+    # Download link for the results
+    csv = final_results.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Download Projection Results",
+        data=csv,
+        file_name='projection_results.csv',
+        mime='text/csv',
+        key="download_projection_results"
+    )
+except Exception as e:
+
+    st.error(f"An error occurred: {e}")
+         
