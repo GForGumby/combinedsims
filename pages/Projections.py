@@ -6,7 +6,7 @@ import streamlit as st
 import pandas as pd
 from projections_sim import prepare_draft_results, run_parallel_simulations
 
-st.title('Fantasy Football Projection Simulator')
+st.title('Week 0 BR Test Sims')
 
 # File upload for draft results
 uploaded_draft_file = st.file_uploader("Upload your draft results CSV file", type=["csv"])
