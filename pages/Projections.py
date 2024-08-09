@@ -25,7 +25,7 @@ def prepare_draft_results(draft_results_df):
     return draft_results, player_positions, player_teams, teams
 
 # Function to simulate projections with correlations
-def simulate_correlated_projections(draft_results, projection_lookup, num_simulations):
+def simulate_correlated_projections(draft_results, player_positions, projection_lookup, num_simulations):
     player_names = [player for player in projection_lookup.keys()]
     means = np.array([projection_lookup[player][0] for player in player_names])
     std_devs = np.array([projection_lookup[player][1] for player in player_names])
@@ -34,8 +34,12 @@ def simulate_correlated_projections(draft_results, projection_lookup, num_simula
     correlation_matrix = np.identity(len(player_names))
     for i in range(len(player_names)):
         for j in range(i + 1, len(player_names)):
-            if player_names[i] in player_positions and player_names[j] in player_positions:
+            if player_positions.flat[i] == 'QB' and player_positions.flat[j] in ['WR', 'TE']:
                 correlation_matrix[i, j] = correlation_matrix[j, i] = 0.35
+            elif player_positions.flat[i] in ['WR', 'TE'] and player_positions.flat[j] == 'QB':
+                correlation_matrix[i, j] = correlation_matrix[j, i] = 0.35
+            elif player_positions.flat[i] == player_positions.flat[j] == 'RB':
+                correlation_matrix[i, j] = correlation_matrix[j, i] = 0.1
 
     # Covariance matrix
     covariance_matrix = np.outer(std_devs, std_devs) * correlation_matrix
@@ -67,7 +71,7 @@ def run_simulation(num_simulations, draft_results_df, projection_lookup):
     draft_results, player_positions, player_teams, teams = prepare_draft_results(draft_results_df)
 
     # Simulate correlated player projections
-    player_simulations = simulate_correlated_projections(draft_results, projection_lookup, num_simulations)
+    player_simulations = simulate_correlated_projections(draft_results, player_positions, projection_lookup, num_simulations)
 
     # Calculate team scores based on player simulations
     avg_scores = calculate_team_scores(draft_results, player_simulations, num_simulations)
