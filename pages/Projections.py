@@ -7,12 +7,30 @@ from scipy.linalg import cholesky
 def load_data(uploaded_file):
     return pd.read_csv(uploaded_file)
 
-# Function to simulate projections for each player independently
-def simulate_individual_projections(projection_lookup, num_simulations):
-    simulations = {}
-    for player, (mean, std_dev) in projection_lookup.items():
-        simulations[player] = np.random.normal(mean, std_dev, num_simulations)
-    return simulations
+# Function to simulate projections with correlations
+def simulate_correlated_projections(draft_results, projection_lookup, num_simulations):
+    player_names = [player for player in projection_lookup.keys()]
+    means = np.array([projection_lookup[player][0] for player in player_names])
+    std_devs = np.array([projection_lookup[player][1] for player in player_names])
+
+    # Create the correlation matrix for all players
+    correlation_matrix = np.identity(len(player_names))
+    for i in range(len(player_names)):
+        for j in range(i + 1, len(player_names)):
+            if player_names[i] in player_positions and player_names[j] in player_positions:
+                correlation_matrix[i, j] = correlation_matrix[j, i] = 0.35
+
+    # Covariance matrix
+    covariance_matrix = np.outer(std_devs, std_devs) * correlation_matrix
+
+    # Cholesky decomposition
+    L = cholesky(covariance_matrix, lower=True)
+
+    # Generate correlated projections for all players
+    random_normals = np.random.normal(size=(len(player_names), num_simulations))
+    correlated_projections = means[:, None] + np.dot(L, random_normals)
+
+    return {player_names[i]: correlated_projections[i] for i in range(len(player_names))}
 
 # Function to calculate team scores by summing player projections
 def calculate_team_scores(draft_results, player_simulations, num_simulations):
@@ -31,8 +49,8 @@ def run_simulation(num_simulations, draft_results_df, projection_lookup):
     # Prepare draft results for each team
     draft_results, player_positions, player_teams, teams = prepare_draft_results(draft_results_df)
 
-    # Simulate individual player projections
-    player_simulations = simulate_individual_projections(projection_lookup, num_simulations)
+    # Simulate correlated player projections
+    player_simulations = simulate_correlated_projections(draft_results, projection_lookup, num_simulations)
 
     # Calculate team scores based on player simulations
     avg_scores = calculate_team_scores(draft_results, player_simulations, num_simulations)
