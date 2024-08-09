@@ -1,13 +1,13 @@
 import streamlit as st
-
-# Function to simulate a draft (copy the content from your draft sim app here)
-def draft_simulator():
-    st.title("Draft Simulator")
-    import streamlit as st
 import pandas as pd
 import numpy as np
 from draftsim import run_simulations
 from projsim import projections, prepare_draft_results, simulate_team_projections, run_parallel_simulations
+from projections_sim import prepare_draft_results, run_parallel_simulations
+
+# Function to simulate a draft (copy the content from your draft sim app here)
+def draft_simulator():
+    st.title("Draft Simulator")
 
 # Streamlit app
 st.sidebar.title("Fantasy Football Simulator")
@@ -120,9 +120,6 @@ elif page == "Projection Simulator":
 # Function to run the projection simulation (copy the content from your projection sim app here)
 def projection_simulator():
     st.title("Projection Simulator")
-    import streamlit as st
-import pandas as pd
-from projections_sim import prepare_draft_results, run_parallel_simulations
 
 st.title('Fantasy Football Projection Simulator')
 
