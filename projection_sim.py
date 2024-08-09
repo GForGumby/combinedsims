@@ -155,21 +155,21 @@ def run_parallel_simulations(num_simulations, draft_results_df, projection_looku
     return final_results
 
 # File upload for draft results
-uploaded_draft_file = st.file_uploader("Upload your draft results CSV file", type=["csv"])
+uploaded_draft_file = st.file_uploader("Upload your draft results CSV file", type=["csv"], key="draft_file_uploader")
 
 # File upload for custom projections
-uploaded_projections_file = st.file_uploader("Upload your custom projections CSV file (must include 'player_name', 'proj', and 'projsd')", type=["csv"])
+uploaded_projections_file = st.file_uploader("Upload your custom projections CSV file (must include 'player_name', 'proj', and 'projsd')", type=["csv"], key="projections_file_uploader")
 
 if uploaded_draft_file is not None:
     draft_results_df = pd.read_csv(uploaded_draft_file)
 
     st.write("Draft Results Data Preview:")
-    st.dataframe(draft_results_df.head())
+    st.dataframe(draft_results_df.head(), key="draft_results_df")
 
     if uploaded_projections_file is not None:
         custom_projections_df = pd.read_csv(uploaded_projections_file)
         st.write("Custom Projections Data Preview:")
-        st.dataframe(custom_projections_df.head())
+        st.dataframe(custom_projections_df.head(), key="custom_projections_df")
 
         # Create a projection lookup dictionary from the custom projections
         projection_lookup = {
@@ -178,14 +178,14 @@ if uploaded_draft_file is not None:
         }
 
         # Number of simulations for projection
-        num_simulations = st.number_input("Number of simulations", min_value=1, value=1000)
+        num_simulations = st.number_input("Number of simulations", min_value=1, value=1000, key="num_simulations")
 
-        if st.button("Run Projection Simulation"):
+        if st.button("Run Projection Simulation", key="run_projection_sim"):
             # Run simulations
             final_results = run_parallel_simulations(num_simulations, draft_results_df, projection_lookup)
 
             # Display the results
-            st.dataframe(final_results)
+            st.dataframe(final_results, key="final_results_df")
 
             # Download link for the results
             csv = final_results.to_csv(index=False).encode('utf-8')
@@ -194,6 +194,7 @@ if uploaded_draft_file is not None:
                 data=csv,
                 file_name='projection_results.csv',
                 mime='text/csv',
+                key="download_projection_results"
             )
     else:
         st.error("Please upload a custom projections CSV file to proceed.")
