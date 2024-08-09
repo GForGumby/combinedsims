@@ -24,6 +24,12 @@ def apply_projections_to_teams(draft_results_df, simulated_projections_df, num_s
     for sim in range(num_simulations):
         for team, players in team_players.items():
             try:
+                # Check if all player names exist in the projections
+                missing_players = [player for player in players if player not in simulated_projections_df.index]
+                if missing_players:
+                    st.error(f"Missing players in projections for simulation {sim}: {missing_players}")
+                    raise KeyError(f"Missing players: {missing_players}")
+
                 # Sum the projections for all players in the team for this simulation
                 team_score = simulated_projections_df.loc[players, str(sim)].sum()
                 team_results[team].append(team_score)
