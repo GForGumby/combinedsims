@@ -1,8 +1,4 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-from numba import jit
-from scipy.linalg import cholesky
 from page1 import page1
 from page2 import page2
 
