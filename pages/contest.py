@@ -1,8 +1,8 @@
 import pandas as pd
 import streamlit as st
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 
-# Move this function to the top level of the script
+# Define this function at the top level of the script
 def calculate_simulation_payouts(sim, draft_results_df, projections_df):
     total_projections = []
 
@@ -25,14 +25,13 @@ def calculate_simulation_payouts(sim, draft_results_df, projections_df):
 
     return payouts
 
-# Step 2: Function to apply payouts concurrently
+# Function to apply payouts concurrently using threads
 def apply_payouts_concurrently(draft_results_df, projections_df):
     team_payouts = {}
 
-    max_workers = min(4, len(projections_df.columns))  # Limit to 4 workers or the number of simulations
-    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {executor.submit(calculate_simulation_payouts, sim, draft_results_df, projections_df): sim for sim in projections_df.columns}
-        for future in as_completed(futures):
+        for future in futures:
             sim_payouts = future.result()
             for team, payout in sim_payouts.items():
                 team_payouts[team] = team_payouts.get(team, 0) + payout
