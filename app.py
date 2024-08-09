@@ -1,16 +1,5 @@
 # page1.py
 import streamlit as st
-# File uploader widget
-uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
-
-# Check if a file has been uploaded
-if uploaded_file is not None:
-    # Read the uploaded CSV file
-    df = pd.read_csv(uploaded_file)
-    st.write("File uploaded successfully!")
-    st.write(df)  # Display the DataFrame
-else:
-    st.write("Please upload a CSV file.")
 def page1():
     st.title("Page 1")
     import pandas as pd
@@ -106,18 +95,17 @@ st.download_button(
     mime='text/csv',
 )
 
-# File upload
-uploaded_file = st.file_uploader("Upload your ADP CSV file", type=["csv"])
+# File uploader widget
+uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
+# Check if a file has been uploaded
 if uploaded_file is not None:
+    # Read the uploaded CSV file
     df = pd.read_csv(uploaded_file)
-
-    # Check if player_id exists, if not, create it
-    if 'player_id' not in df.columns:
-        df['player_id'] = df.index
-    
-    st.write("Data Preview:")
-    st.dataframe(df.head())
+    st.write("File uploaded successfully!")
+    st.write(df)  # Display the DataFrame
+else:
+    st.write("Please upload a CSV file.")
     
     # Parameters for the simulation
     num_simulations = st.number_input("Number of simulations", min_value=1, value=10)
