@@ -14,14 +14,13 @@ uploaded_draft_file = st.file_uploader("Upload your draft results CSV file", typ
 # File upload for custom projections
 uploaded_projections_file = st.file_uploader("Upload your custom projections CSV file (optional)", type=["csv"])
 
-if uploaded_draft_file is not None:
+
     draft_results_df = pd.read_csv(uploaded_draft_file)
 
     st.write("Draft Results Data Preview:")
     st.dataframe(draft_results_df.head())
 
     
-    if uploaded_projections_file is not None:
         custom_projections_df = pd.read_csv(uploaded_projections_file)
         st.write("Custom Projections Data Preview:")
         st.dataframe(custom_projections_df.head())
