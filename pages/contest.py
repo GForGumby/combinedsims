@@ -68,6 +68,16 @@ def prepare_draft_results(draft_results_df):
 
     return draft_results, teams
 
+# Function to create a projection lookup dictionary from the CSV
+def create_projection_lookup(projections_df):
+    projection_lookup = {}
+    for _, row in projections_df.iterrows():
+        player_name = row['player_name']
+        proj = row['proj']
+        projsd = row['projsd']
+        projection_lookup[player_name] = (proj, projsd)
+    return projection_lookup
+
 # Function to simulate team projections from draft results
 def simulate_team_projections(draft_results, projection_lookup, num_simulations):
     num_teams = draft_results.shape[0]
@@ -94,57 +104,42 @@ def simulate_team_projections(draft_results, projection_lookup, num_simulations)
     avg_payouts = total_payouts / num_simulations
     return avg_payouts
 
-def run_simulations(num_simulations, draft_results_df, projection_lookup):
-    draft_results, teams = prepare_draft_results(draft_results_df)
-    avg_payouts = simulate_team_projections(draft_results, projection_lookup, num_simulations)
-    
-    # Prepare final results
-    final_results = pd.DataFrame({
-        'Team': teams,
-        'Average_Payout': avg_payouts
-    })
-    
-    return final_results
+# Streamlit app to handle file uploads and run simulations
+st.title('Fantasy Football Payout Simulator')
 
-# Streamlit app
-st.title('Fantasy Football Projections and Payout Simulator')
+# Upload projections CSV file
+uploaded_projections_file = st.file_uploader("Upload your Projections CSV file", type=["csv"])
 
-# Upload for draft results
-uploaded_draft_file = st.file_uploader("Upload your draft results CSV file", type=["csv"])
+# Upload draft results CSV file
+uploaded_draft_file = st.file_uploader("Upload your Draft Results CSV file", type=["csv"])
 
-# Upload for projections
-uploaded_projections_file = st.file_uploader("Upload your projections CSV file", type=["csv"])
-
-if uploaded_draft_file and uploaded_projections_file:
-    draft_results_df = pd.read_csv(uploaded_draft_file)
+if uploaded_projections_file is not None and uploaded_draft_file is not None:
     projections_df = pd.read_csv(uploaded_projections_file)
+    draft_results_df = pd.read_csv(uploaded_draft_file)
 
-    # Create a projection lookup dictionary for quick access
-    projection_lookup = {
-        row['player_name']: (row['proj'], row['projsd'])
-        for _, row in projections_df.iterrows()
-    }
+    # Create projection lookup dictionary
+    projection_lookup = create_projection_lookup(projections_df)
 
-    # Number of simulations input
-    num_simulations = st.number_input("Number of simulations", min_value=1, value=1000, step=1)
+    # Prepare draft results
+    draft_results, teams = prepare_draft_results(draft_results_df)
 
-    if st.button("Run Simulations"):
-        with st.spinner('Running simulations...'):
-            try:
-                final_results = run_simulations(num_simulations, draft_results_df, projection_lookup)
-                st.success("Simulations completed!")
+    # Run simulations
+    num_simulations = st.number_input("Number of simulations", min_value=1, value=1000)
+    if st.button("Run Simulation"):
+        avg_payouts = simulate_team_projections(draft_results, projection_lookup, num_simulations)
+        
+        # Prepare final results
+        final_results = pd.DataFrame({
+            'Team': teams,
+            'Average_Payout': avg_payouts
+        })
 
-                # Display results
-                st.write("Average Payouts per Team")
-                st.dataframe(final_results)
-
-                # Download results as CSV
-                csv = final_results.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="Download Results",
-                    data=csv,
-                    file_name='simulation_results.csv',
-                    mime='text/csv'
-                )
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
+        # Display and download results
+        st.write(final_results)
+        csv = final_results.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download Payout Results",
+            data=csv,
+            file_name='payout_results.csv',
+            mime='text/csv',
+        )
