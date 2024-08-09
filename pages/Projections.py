@@ -153,7 +153,12 @@ if uploaded_draft_file is not None:
         num_simulations = st.number_input("Number of simulations", min_value=1, value=1000)
 
         if st.button("Run Projection Simulation"):
-            # Run simulations
+           # Function to run parallel simulations
+  def run_parallel_simulations(num_simulations, draft_results_df, projection_lookup):
+     draft_results, player_positions, player_teams, teams = prepare_draft_results(draft_results_df)
+    avg_payouts = simulate_team_projections(draft_results, player_positions, player_teams, projection_lookup, num_simulations)
+
+          # Run simulations
             final_results = run_parallel_simulations(num_simulations, draft_results_df, projection_lookup)
 
             # Display the results
@@ -258,11 +263,6 @@ def simulate_team_projections(draft_results, player_positions, player_teams, pro
     # Calculate average payout per team
     avg_payouts = total_payouts / num_simulations
     return avg_payouts
-
-# Function to run parallel simulations
-run_parallel_simulations(num_simulations, draft_results_df, projection_lookup):
-    draft_results, player_positions, player_teams, teams = prepare_draft_results(draft_results_df)
-    avg_payouts = simulate_team_projections(draft_results, player_positions, player_teams, projection_lookup, num_simulations)
 
     # Prepare final results
     final_results = pd.DataFrame({
