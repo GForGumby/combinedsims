@@ -34,7 +34,7 @@ for _, row in custom_projections_df.iterrows():
 # Number of simulations for projection
 num_simulations = st.number_input("Number of simulations", min_value=1, value=1000)
 
-    if st.button("Run Projection Simulation"):
+if st.button("Run Projection Simulation"):
         # Run simulations
         final_results = run_parallel_simulations(num_simulations, draft_results_df, projection_lookup)
 
