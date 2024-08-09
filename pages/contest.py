@@ -1,35 +1,40 @@
 import pandas as pd
 import streamlit as st
+from concurrent.futures import ProcessPoolExecutor
 
-# Step 1: Apply Projections and Payouts to Teams
-def apply_payouts_to_teams(draft_results_df, projections_df):
-    st.write("Applying payouts...")  # Log message
+# Step 1: Function to calculate payout for a single simulation
+def calculate_simulation_payouts(sim, draft_results_df, projections_df):
+    total_projections = []
+
+    for team in draft_results_df['Team'].unique():
+        team_data = draft_results_df[draft_results_df['Team'] == team]
+        team_projection = team_data.apply(lambda row: projections_df.loc[row.filter(regex='^Player_\d+_Name$'), sim].sum(), axis=1).sum()
+        total_projections.append((team, team_projection))
+
+    total_projections.sort(key=lambda x: x[1], reverse=True)
+    
+    payouts = {}
+    for rank, (team, _) in enumerate(total_projections):
+        if rank == 0:
+            payout = 1000
+        elif 1 <= rank < 10:
+            payout = 100
+        else:
+            payout = 0
+        payouts[team] = payouts.get(team, 0) + payout
+
+    return payouts
+
+# Step 2: Function to apply payouts concurrently
+def apply_payouts_concurrently(draft_results_df, projections_df):
     team_payouts = {}
 
-    for sim in projections_df.columns:
-        st.write(f"Processing simulation: {sim}")  # Log message
-        total_projections = []
-
-        for team in draft_results_df['Team'].unique():
-            st.write(f"Processing team: {team}")  # Log message
-            team_data = draft_results_df[draft_results_df['Team'] == team]
-
-            team_projection = team_data.apply(lambda row: projections_df.loc[row.filter(regex='^Player_\d+_Name$'), sim].sum(), axis=1).sum()
-            total_projections.append((team, team_projection))
-
-        total_projections.sort(key=lambda x: x[1], reverse=True)
-
-        for rank, (team, _) in enumerate(total_projections):
-            if rank == 0:
-                payout = 1000
-            elif 1 <= rank < 10:
-                payout = 100
-            else:
-                payout = 0
-
-            if team not in team_payouts:
-                team_payouts[team] = 0
-            team_payouts[team] += payout
+    with ProcessPoolExecutor() as executor:
+        futures = {executor.submit(calculate_simulation_payouts, sim, draft_results_df, projections_df): sim for sim in projections_df.columns}
+        for future in futures:
+            sim_payouts = future.result()
+            for team, payout in sim_payouts.items():
+                team_payouts[team] = team_payouts.get(team, 0) + payout
     
     return pd.DataFrame(list(team_payouts.items()), columns=['Team', 'Total_Payout'])
 
@@ -43,7 +48,6 @@ uploaded_draft_file = st.file_uploader("Upload your draft results CSV file", typ
 uploaded_projections_file = st.file_uploader("Upload your simulated projections CSV file", type=["csv"])
 
 if uploaded_draft_file and uploaded_projections_file:
-    st.write("Loading files...")  # Log message
     draft_results_df = pd.read_csv(uploaded_draft_file)
     projections_df = pd.read_csv(uploaded_projections_file, index_col=0)
 
@@ -55,9 +59,8 @@ if uploaded_draft_file and uploaded_projections_file:
 
     st.write("Starting payout calculation...")  # Log message
     try:
-        team_payouts = apply_payouts_to_teams(draft_results_df, projections_df)
+        team_payouts = apply_payouts_concurrently(draft_results_df, projections_df)
 
-        st.write("Displaying results...")  # Log message
         st.write("Team Payout Results:")
         st.dataframe(team_payouts)
 
