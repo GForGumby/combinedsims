@@ -162,7 +162,7 @@ if uploaded_file is not None:
             data=csv,
             file_name='draft_results_with_team_stacking_and_positions.csv',
             mime='text/csv',
-        ))
+        )
 
 elif page == "Projection Simulator":
     st.title('Projection Simulator')
