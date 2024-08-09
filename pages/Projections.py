@@ -3,20 +3,26 @@ import pandas as pd
 import numpy as np
 from scipy.linalg import cholesky
 
-# Function to generate projections using a correlation matrix
-def generate_correlated_projections(player_names, player_positions, player_teams, projection_lookup, correlation_matrix):
-    num_players = len(player_names)
-    mean = np.array([projection_lookup[name][0] for name in player_names])
-    std_dev = np.array([projection_lookup[name][1] for name in player_names])
+# Function to load data from the uploaded file
+def load_data(uploaded_file):
+    return pd.read_csv(uploaded_file)
 
-    cov_matrix = np.outer(std_dev, std_dev) * correlation_matrix
-    L = cholesky(cov_matrix, lower=True)
+# Function to prepare draft results in numpy array format
+def prepare_draft_results(draft_results_df):
+    teams = draft_results_df['Team'].unique()
+    num_teams = len(teams)
+    draft_results = np.empty((num_teams, 6), dtype='U50')
+    player_positions = np.empty((num_teams, 6), dtype='U3')
+    player_teams = np.empty((num_teams, 6), dtype='U50')
 
-    random_normals = np.random.normal(size=num_players)
-    correlated_normals = np.dot(L, random_normals)
-    correlated_projections = mean + correlated_normals
+    for idx, team in enumerate(teams):
+        team_players = draft_results_df[draft_results_df['Team'] == team]
+        for i in range(1, 7):
+            draft_results[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Name']}"
+            player_positions[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Position']}"
+            player_teams[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Team']}"
 
-    return correlated_projections
+    return draft_results, player_positions, player_teams, teams
 
 # Function to create a simplified correlation matrix based on real-life NFL teams and positions
 def create_correlation_matrix(player_teams, player_positions):
@@ -49,22 +55,20 @@ def create_correlation_matrix(player_teams, player_positions):
 
     return correlation_matrix
 
-# Function to prepare draft results in numpy array format
-def prepare_draft_results(draft_results_df):
-    teams = draft_results_df['Team'].unique()
-    num_teams = len(teams)
-    draft_results = np.empty((num_teams, 6), dtype='U50')
-    player_positions = np.empty((num_teams, 6), dtype='U3')
-    player_teams = np.empty((num_teams, 6), dtype='U50')
+# Function to generate correlated projections
+def generate_correlated_projections(player_names, player_positions, player_teams, projection_lookup, correlation_matrix):
+    num_players = len(player_names)
+    mean = np.array([projection_lookup[name][0] for name in player_names])
+    std_dev = np.array([projection_lookup[name][1] for name in player_names])
 
-    for idx, team in enumerate(teams):
-        team_players = draft_results_df[draft_results_df['Team'] == team]
-        for i in range(1, 7):
-            draft_results[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Name']}"
-            player_positions[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Position']}"
-            player_teams[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Team']}"
+    cov_matrix = np.outer(std_dev, std_dev) * correlation_matrix
+    L = cholesky(cov_matrix, lower=True)
 
-    return draft_results, player_positions, player_teams, teams
+    random_normals = np.random.normal(size=num_players)
+    correlated_normals = np.dot(L, random_normals)
+    correlated_projections = mean + correlated_normals
+
+    return correlated_projections
 
 # Function to simulate team projections from draft results
 def simulate_team_projections(draft_results, player_positions, player_teams, projection_lookup, num_simulations):
@@ -83,12 +87,10 @@ def simulate_team_projections(draft_results, player_positions, player_teams, pro
     avg_points = np.mean(total_points, axis=1)
     return avg_points
 
-# Function to run the entire simulation process
 def run_simulation(num_simulations, draft_results_df, projection_lookup):
     draft_results, player_positions, player_teams, teams = prepare_draft_results(draft_results_df)
     avg_points = simulate_team_projections(draft_results, player_positions, player_teams, projection_lookup, num_simulations)
 
-    # Prepare final results
     final_results = pd.DataFrame({
         'Team': teams,
         'Average Points': avg_points
@@ -99,15 +101,12 @@ def run_simulation(num_simulations, draft_results_df, projection_lookup):
 # Streamlit app
 st.title('Fantasy Football Projection Simulator')
 
-# File upload for draft results
 uploaded_draft_file = st.file_uploader("Upload your draft results CSV file", type=["csv"])
-
-# File upload for custom projections
 uploaded_projections_file = st.file_uploader("Upload your custom projections CSV file", type=["csv"])
 
 if uploaded_draft_file and uploaded_projections_file:
-    draft_results_df = pd.read_csv(uploaded_draft_file)
-    custom_projections_df = pd.read_csv(uploaded_projections_file)
+    draft_results_df = load_data(uploaded_draft_file)
+    custom_projections_df = load_data(uploaded_projections_file)
 
     st.write("Draft Results Data Preview:")
     st.dataframe(draft_results_df.head())
@@ -115,13 +114,11 @@ if uploaded_draft_file and uploaded_projections_file:
     st.write("Custom Projections Data Preview:")
     st.dataframe(custom_projections_df.head())
 
-    # Create a projection lookup dictionary from the custom projections
     projection_lookup = {
         row['player_name']: (row['proj'], row['projsd'])
         for _, row in custom_projections_df.iterrows()
     }
 
-    # Number of simulations for projection
     num_simulations = st.number_input("Number of simulations", min_value=1, value=1000)
 
     if st.button("Run Projection Simulation"):
@@ -131,7 +128,6 @@ if uploaded_draft_file and uploaded_projections_file:
             st.write("Simulation completed. Displaying results...")
             st.dataframe(final_results)
 
-            # Prepare CSV data for download
             csv = final_results.to_csv(index=False).encode('utf-8')
             st.download_button(
                 label="Download Projection Results",
