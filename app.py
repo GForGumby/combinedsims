@@ -81,7 +81,6 @@ def simulate_draft(df, starting_team_num, num_teams=6, num_rounds=6, team_bonus=
                 df_copy = df_copy.loc[df_copy['player_id'] != selected_player['player_id']]
     
     return teams
-
 # Function to run multiple simulations
 def run_simulations(df, num_simulations=10, num_teams=6, num_rounds=6, team_bonus=.95):
     all_drafts = []
