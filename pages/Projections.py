@@ -14,8 +14,7 @@ uploaded_draft_file = st.file_uploader("Upload your draft results CSV file", typ
 # File upload for custom projections
 uploaded_projections_file = st.file_uploader("Upload your custom projections CSV file (optional)", type=["csv"])
 
-
-    draft_results_df = pd.read_csv(uploaded_draft_file)
+draft_results_df = pd.read_csv(uploaded_draft_file)
 
     st.write("Draft Results Data Preview:")
     st.dataframe(draft_results_df.head())
