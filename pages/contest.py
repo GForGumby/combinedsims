@@ -66,17 +66,22 @@ def prepare_draft_results(draft_results_df):
             else:
                 draft_results[idx, i - 1] = "N/A"  # Placeholder for missing players
 
-    return draft_results, teams 
+    return draft_results, teams
 
 # Function to create a projection lookup dictionary from the CSV
 def create_projection_lookup(projections_df):
-    projection_lookup = {}
-    for _, row in projections_df.iterrows():
-        player_name = row['player_name']
-        proj = row['proj']
-        projsd = row['projsd']
-        projection_lookup[player_name] = (proj, projsd)
-    return projection_lookup
+    try:
+        projection_lookup = {}
+        for _, row in projections_df.iterrows():
+            player_name = row['player_name']
+            proj = row['proj']
+            projsd = row['projsd']
+            projection_lookup[player_name] = (proj, projsd)
+        return projection_lookup
+    except KeyError as e:
+        st.error(f"Column not found: {e}")
+        st.write("Available columns in the projections CSV:", projections_df.columns)
+        return {}
 
 # Function to simulate team projections from draft results
 def simulate_team_projections(draft_results, projection_lookup, num_simulations):
@@ -120,26 +125,27 @@ if uploaded_projections_file is not None and uploaded_draft_file is not None:
     # Create projection lookup dictionary
     projection_lookup = create_projection_lookup(projections_df)
 
-    # Prepare draft results
-    draft_results, teams = prepare_draft_results(draft_results_df)
+    if projection_lookup:
+        # Prepare draft results
+        draft_results, teams = prepare_draft_results(draft_results_df)
 
-    # Run simulations
-    num_simulations = st.number_input("Number of simulations", min_value=1, value=1000)
-    if st.button("Run Simulation"):
-        avg_payouts = simulate_team_projections(draft_results, projection_lookup, num_simulations)
-        
-        # Prepare final results
-        final_results = pd.DataFrame({
-            'Team': teams,
-            'Average_Payout': avg_payouts
-        })
+        # Run simulations
+        num_simulations = st.number_input("Number of simulations", min_value=1, value=1000)
+        if st.button("Run Simulation"):
+            avg_payouts = simulate_team_projections(draft_results, projection_lookup, num_simulations)
+            
+            # Prepare final results
+            final_results = pd.DataFrame({
+                'Team': teams,
+                'Average_Payout': avg_payouts
+            })
 
-        # Display and download results
-        st.write(final_results)
-        csv = final_results.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Download Payout Results",
-            data=csv,
-            file_name='payout_results.csv',
-            mime='text/csv',
-        )
+            # Display and download results
+            st.write(final_results)
+            csv = final_results.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="Download Payout Results",
+                data=csv,
+                file_name='payout_results.csv',
+                mime='text/csv',
+            )
