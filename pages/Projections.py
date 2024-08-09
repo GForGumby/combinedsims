@@ -31,8 +31,8 @@ for _, row in custom_projections_df.iterrows():
         projsd = row.get('projsd', default_projections.get(player_name, {}).get('projsd', 6))  # Default projsd = 6 if not specified
         projection_lookup[player_name] = (proj, projsd)
 
-    # Number of simulations for projection
-    num_simulations = st.number_input("Number of simulations", min_value=1, value=1000)
+# Number of simulations for projection
+num_simulations = st.number_input("Number of simulations", min_value=1, value=1000)
 
     if st.button("Run Projection Simulation"):
         # Run simulations
