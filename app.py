@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from numba import jit
+from scipy.linalg import cholesky
 
 # Import necessary functions from draftsim and projections_sim modules
 try:
@@ -20,10 +22,7 @@ page = st.sidebar.selectbox("Select a Page", ["Draft Simulator", "Projection Sim
 if page == "Draft Simulator":
     st.title('Fantasy Football Draft Simulator')
     # Add the draft simulator logic here...
-    draft_simulator(import pandas as pd
-import numpy as np
-import streamlit as st
-
+    draft_simulator(
 # Function to simulate a single draft
 def simulate_draft(df, starting_team_num, num_teams=6, num_rounds=6, team_bonus=.95):
     df_copy = df.copy()
@@ -168,10 +167,7 @@ if uploaded_file is not None:
 elif page == "Projection Simulator":
     st.title('Projection Simulator')
     # Add the projection simulator logic here...
-    projection_simulator(import pandas as pd
-import numpy as np
-from numba import jit
-from scipy.linalg import cholesky
+    projection_simulator(
 
 # Define player projections and standard deviations
 projections = {
