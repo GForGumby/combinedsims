@@ -19,10 +19,6 @@ if uploaded_draft_file is not None:
     # Number of simulations for projection
     num_simulations = st.number_input("Number of simulations", min_value=1, value=1000)
 
-    def run_parallel_simulations(num_simulations, draft_results_df, projection_lookup):
-        draft_results, player_positions, player_teams, teams = prepare_draft_results(draft_results_df)
-        avg_payouts = simulate_team_projections(draft_results, player_positions, player_teams, projection_lookup, num_simulations)
-     
     # Prepare final results
     if st.button("Run Projection Simulation"):
         # Run simulations
