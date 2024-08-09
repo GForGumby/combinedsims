@@ -1,6 +1,16 @@
 # page1.py
 import streamlit as st
+# File uploader widget
+uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
+# Check if a file has been uploaded
+if uploaded_file is not None:
+    # Read the uploaded CSV file
+    df = pd.read_csv(uploaded_file)
+    st.write("File uploaded successfully!")
+    st.write(df)  # Display the DataFrame
+else:
+    st.write("Please upload a CSV file.")
 def page1():
     st.title("Page 1")
     import pandas as pd
