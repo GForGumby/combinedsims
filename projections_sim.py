@@ -189,23 +189,4 @@ if uploaded_draft_file is not None:
             # Run simulations
             final_results = run_parallel_simulations(num_simulations, draft_results_df, projection_lookup)
 
-            # Display the results
-            if not final_results.empty:
-                st.dataframe(final_results, key="final_results_df")
-
-                               # Download link for the results
-                csv = final_results.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="Download Projection Results",
-                    data=csv,
-                    file_name='projection_results.csv',
-                    mime='text/csv',
-                    key="download_projection_results"
-                )
-            else:
-                st.error("No results were generated. Please check your input data and try again.")
-    else:
-        st.error("Please upload a custom projections CSV file to proceed.")
-else:
-    st.info("Please upload your draft results CSV file to start.")
-
+    st.error(f"An error occurred: {e}")
