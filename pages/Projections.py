@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from scipy.linalg import cholesky
+from scipy.linalg import cholesky, LinAlgError
 
 # Function to load data from the uploaded file
 def load_data(uploaded_file):
@@ -44,8 +44,14 @@ def simulate_correlated_projections(draft_results, player_positions, projection_
     # Covariance matrix
     covariance_matrix = np.outer(std_devs, std_devs) * correlation_matrix
 
+    # Regularization: Add a small value to the diagonal to ensure the matrix is positive definite
+    covariance_matrix += np.eye(len(player_names)) * 1e-6
+
     # Cholesky decomposition
-    L = cholesky(covariance_matrix, lower=True)
+    try:
+        L = cholesky(covariance_matrix, lower=True)
+    except LinAlgError:
+        raise ValueError("Covariance matrix is not positive definite even after regularization.")
 
     # Generate correlated projections for all players
     random_normals = np.random.normal(size=(len(player_names), num_simulations))
