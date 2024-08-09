@@ -60,8 +60,9 @@ def prepare_draft_results(draft_results_df):
     for idx, team in enumerate(teams):
         team_players = draft_results_df[draft_results_df['Team'] == team]
         for i in range(1, 7):
-            if i <= len(team_players):
-                draft_results[idx, i - 1] = f"{team_players.iloc[i - 1]['G']}"
+            player_column = f'Player_{i}_Name'
+            if player_column in team_players.columns:
+                draft_results[idx, i - 1] = f"{team_players.iloc[0][player_column]}"
             else:
                 draft_results[idx, i - 1] = "N/A"  # Placeholder for missing players
 
