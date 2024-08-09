@@ -437,4 +437,4 @@ def run_parallel_simulations(num_simulations, draft_results_df, projection_looku
         'Average_Payout': avg_payouts
     })
     
-    return final_results)
+    return final_results
