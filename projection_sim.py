@@ -1,4 +1,4 @@
-import streamlit as st
+              import streamlit as st
 import pandas as pd
 import numpy as np
 from numba import jit
@@ -193,5 +193,18 @@ if uploaded_draft_file is not None:
             if not final_results.empty:
                 st.dataframe(final_results, key="final_results_df")
 
-                # Download link for the results
-                csv = final_results.to_csv(index=False
+  # Download link for the results
+                csv = final_results.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="Download Projection Results",
+                    data=csv,
+                    file_name='projection_results.csv',
+                    mime='text/csv',
+                    key="download_projection_results"
+                )
+            else:
+                st.error("No results were generated. Please check your input data and try again.")
+    else:
+        st.error("Please upload a custom projections CSV file to proceed.")
+else:
+    st.info("Please upload your draft results CSV file to start.")
