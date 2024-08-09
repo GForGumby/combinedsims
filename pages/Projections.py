@@ -7,6 +7,23 @@ from scipy.linalg import cholesky
 def load_data(uploaded_file):
     return pd.read_csv(uploaded_file)
 
+# Function to prepare draft results in numpy array format
+def prepare_draft_results(draft_results_df):
+    teams = draft_results_df['Team'].unique()
+    num_teams = len(teams)
+    draft_results = np.empty((num_teams, 6), dtype='U50')
+    player_positions = np.empty((num_teams, 6), dtype='U3')
+    player_teams = np.empty((num_teams, 6), dtype='U50')
+
+    for idx, team in enumerate(teams):
+        team_players = draft_results_df[draft_results_df['Team'] == team]
+        for i in range(1, 7):
+            draft_results[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Name']}"
+            player_positions[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Position']}"
+            player_teams[idx, i - 1] = f"{team_players.iloc[0][f'Player_{i}_Team']}"
+
+    return draft_results, player_positions, player_teams, teams
+
 # Function to simulate projections with correlations
 def simulate_correlated_projections(draft_results, projection_lookup, num_simulations):
     player_names = [player for player in projection_lookup.keys()]
