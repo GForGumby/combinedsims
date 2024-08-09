@@ -66,7 +66,7 @@ def prepare_draft_results(draft_results_df):
             else:
                 draft_results[idx, i - 1] = "N/A"  # Placeholder for missing players
 
-    return draft_results, teams
+    return draft_results, teams 
 
 # Function to create a projection lookup dictionary from the CSV
 def create_projection_lookup(projections_df):
