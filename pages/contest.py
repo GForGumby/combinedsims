@@ -68,7 +68,7 @@ def prepare_draft_results(draft_results_df):
 
     return draft_results, teams
 
-# Function to simulate team projections from draft results without using numba
+# Function to simulate team projections from draft results
 def simulate_team_projections(draft_results, projection_lookup, num_simulations):
     num_teams = draft_results.shape[0]
     total_payouts = np.zeros(num_teams)
@@ -112,19 +112,17 @@ st.title('Fantasy Football Projections and Payout Simulator')
 # Upload for draft results
 uploaded_draft_file = st.file_uploader("Upload your draft results CSV file", type=["csv"])
 
-# Define your projections here or load them from a file if needed
-projections = {
-    "Christian McCaffrey": {'proj': 30, 'projsd': 9},
-    # Add more players as needed...
-}
+# Upload for projections
+uploaded_projections_file = st.file_uploader("Upload your projections CSV file", type=["csv"])
 
-if uploaded_draft_file:
+if uploaded_draft_file and uploaded_projections_file:
     draft_results_df = pd.read_csv(uploaded_draft_file)
+    projections_df = pd.read_csv(uploaded_projections_file)
 
     # Create a projection lookup dictionary for quick access
     projection_lookup = {
-        name: (projections[name]['proj'], projections[name]['projsd'])
-        for name in projections
+        row['player_name']: (row['proj'], row['projsd'])
+        for _, row in projections_df.iterrows()
     }
 
     # Number of simulations input
