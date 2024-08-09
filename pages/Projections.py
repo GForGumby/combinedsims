@@ -16,13 +16,12 @@ uploaded_projections_file = st.file_uploader("Upload your custom projections CSV
 
 draft_results_df = pd.read_csv(uploaded_draft_file)
 
-    st.write("Draft Results Data Preview:")
-    st.dataframe(draft_results_df.head())
+st.write("Draft Results Data Preview:")
+st.dataframe(draft_results_df.head())
 
-    
-        custom_projections_df = pd.read_csv(uploaded_projections_file)
-        st.write("Custom Projections Data Preview:")
-        st.dataframe(custom_projections_df.head())
+custom_projections_df = pd.read_csv(uploaded_projections_file)
+st.write("Custom Projections Data Preview:")
+st.dataframe(custom_projections_df.head())
 
         # Create a projection lookup dictionary from the custom projections
         projection_lookup = {}
