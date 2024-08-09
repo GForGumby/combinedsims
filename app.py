@@ -167,7 +167,7 @@ if uploaded_file is not None:
 elif page == "Projection Simulator":
     st.title('Projection Simulator')
     # Add the projection simulator logic here...
-    projection_simulator(
+    projection_simulator()
 
 # Define player projections and standard deviations
 projections = {
