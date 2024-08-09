@@ -143,16 +143,21 @@ def simulate_team_projections(draft_results, player_positions, player_teams, pro
     return avg_payouts
 
 def run_parallel_simulations(num_simulations, draft_results_df, projection_lookup):
-    draft_results, player_positions, player_teams, teams = prepare_draft_results(draft_results_df)
-    avg_payouts = simulate_team_projections(draft_results, player_positions, player_teams, projection_lookup, num_simulations)
+    try:
+        draft_results, player_positions, player_teams, teams = prepare_draft_results(draft_results_df)
+        avg_payouts = simulate_team_projections(draft_results, player_positions, player_teams, projection_lookup, num_simulations)
+        
+        # Prepare final results
+        final_results = pd.DataFrame({
+            'Team': teams,
+            'Average_Payout': avg_payouts
+        })
+        
+        return final_results
     
-    # Prepare final results
-    final_results = pd.DataFrame({
-        'Team': teams,
-        'Average_Payout': avg_payouts
-    })
-    
-    return final_results
+    except Exception as e:
+        st.error(f"An error occurred during simulation: {e}")
+        return pd.DataFrame()
 
 # File upload for draft results
 uploaded_draft_file = st.file_uploader("Upload your draft results CSV file", type=["csv"], key="draft_file_uploader")
@@ -185,16 +190,8 @@ if uploaded_draft_file is not None:
             final_results = run_parallel_simulations(num_simulations, draft_results_df, projection_lookup)
 
             # Display the results
-            st.dataframe(final_results, key="final_results_df")
+            if not final_results.empty:
+                st.dataframe(final_results, key="final_results_df")
 
-            # Download link for the results
-            csv = final_results.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="Download Projection Results",
-                data=csv,
-                file_name='projection_results.csv',
-                mime='text/csv',
-                key="download_projection_results"
-            )
-    else:
-        st.error("Please upload a custom projections CSV file to proceed.")
+                # Download link for the results
+                csv = final_results.to_csv(index=False
