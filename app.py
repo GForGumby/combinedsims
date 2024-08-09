@@ -22,7 +22,7 @@ page = st.sidebar.selectbox("Select a Page", ["Draft Simulator", "Projection Sim
 if page == "Draft Simulator":
     st.title('Fantasy Football Draft Simulator')
     # Add the draft simulator logic here...
-    draft_simulator(
+    draft_simulator()
 # Function to simulate a single draft
 def simulate_draft(df, starting_team_num, num_teams=6, num_rounds=6, team_bonus=.95):
     df_copy = df.copy()
