@@ -25,7 +25,7 @@ st.dataframe(custom_projections_df.head())
 
 # Create a projection lookup dictionary from the custom projections
 projection_lookup = {}
- for _, row in custom_projections_df.iterrows():
+for _, row in custom_projections_df.iterrows():
         player_name = row['player_name']
         proj = row['proj']
         projsd = row.get('projsd', default_projections.get(player_name, {}).get('projsd', 6))  # Default projsd = 6 if not specified
