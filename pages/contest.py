@@ -1,7 +1,17 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
-import streamlit as st
 from numba import jit
+
+# Define player projections and standard deviations
+projections = {
+    "35327210": {'proj': 90.25, 'projsd': 50.8649},
+    # Add more projections as needed
+}
+
+# Convert projections dictionary to a NumPy structured array
+proj_dtype = np.dtype([('player_name', 'U50'), ('proj', 'f4'), ('projsd', 'f4')])
+projections_array = np.array([(name, projections[name]['proj'], projections[name]['projsd']) for name in projections], dtype=proj_dtype)
 
 # JIT compiled function to generate projection
 @jit(nopython=True)
@@ -13,43 +23,63 @@ def generate_projection(median, std_dev):
 @jit(nopython=True)
 def get_payout(rank):
     if rank == 1:
-        return 50000.00
+        return 100000.00
     elif rank == 2:
-        return 10000.00
+        return 35000.00
     elif rank == 3:
-        return 5000.00
+        return 20000.00
     elif rank == 4:
-        return 2500.00
+        return 10000.00
     elif rank == 5:
-        return 2000.00
+        return 4000.00
     elif rank == 6:
+        return 2000.00
+    elif rank == 7:
         return 1500.00
-    elif rank in [7, 8]:
+    elif rank in [8, 9]:
         return 1000.00
-    elif rank in [9, 10]:
+    elif rank in [10, 11]:
+        return 750.00
+    elif rank in range(12, 15):
+        return 600.00
+    elif rank in range(15, 18):
         return 500.00
-    elif rank in range(11, 15):
+    elif rank in range(18, 22):
         return 400.00
-    elif rank in range(15, 20):
-        return 300.00
-    elif rank in range(20, 26):
-        return 250.00
+    elif rank in range(22, 26):
+        return 350.00
     elif rank in range(26, 36):
+        return 300.00
+    elif rank in range(36, 56):
+        return 250.00
+    elif rank in range(56, 76):
         return 200.00
-    elif rank in range(36, 51):
+    elif rank in range(76, 106):
         return 150.00
-    elif rank in range(51, 76):
+    elif rank in range(106, 156):
+        return 120.00
+    elif rank in range(156, 216):
         return 100.00
-    elif rank in range(76, 126):
-        return 75.00
-    elif rank in range(126, 251):
+    elif rank in range(216, 316):
+        return 90.00
+    elif rank in range(316, 416):
+        return 80.00
+    elif rank in range(416, 516):
+        return 70.00
+    elif rank in range(516, 666):
         return 60.00
-    elif rank in range(251, 491):
+    elif rank in range(666, 866):
         return 50.00
-    elif rank in range(491, 1526):
+    elif rank in range(866, 1166):
+        return 45.00
+    elif rank in range(1166, 1671):
         return 40.00
+    elif rank in range(1671, 2571):
+        return 35.00
+    elif rank in range(2571, 5271):
+        return 30.00
     else:
-        return 0
+        return 0.00
 
 # Function to prepare draft results in numpy array format
 def prepare_draft_results(draft_results_df):
@@ -60,30 +90,14 @@ def prepare_draft_results(draft_results_df):
     for idx, team in enumerate(teams):
         team_players = draft_results_df[draft_results_df['Team'] == team]
         for i in range(1, 7):
-            player_column = f'Player_{i}_Name'
-            if player_column in team_players.columns:
-                draft_results[idx, i - 1] = f"{team_players.iloc[0][player_column]}"
+            if i <= len(team_players):
+                draft_results[idx, i - 1] = f"{team_players.iloc[i - 1]['G']}"
             else:
                 draft_results[idx, i - 1] = "N/A"  # Placeholder for missing players
 
     return draft_results, teams
 
-# Function to create a projection lookup dictionary from the CSV
-def create_projection_lookup(projections_df):
-    try:
-        projection_lookup = {}
-        for _, row in projections_df.iterrows():
-            player_name = row['player_name']
-            proj = row['proj']
-            projsd = row['projsd']
-            projection_lookup[player_name] = (proj, projsd)
-        return projection_lookup
-    except KeyError as e:
-        st.error(f"Column not found: {e}")
-        st.write("Available columns in the projections CSV:", projections_df.columns)
-        return {}
-
-# Function to simulate team projections from draft results
+# Function to simulate team projections
 def simulate_team_projections(draft_results, projection_lookup, num_simulations):
     num_teams = draft_results.shape[0]
     total_payouts = np.zeros(num_teams)
@@ -109,43 +123,46 @@ def simulate_team_projections(draft_results, projection_lookup, num_simulations)
     avg_payouts = total_payouts / num_simulations
     return avg_payouts
 
-# Streamlit app to handle file uploads and run simulations
-st.title('Fantasy Football Payout Simulator')
+def run_parallel_simulations(num_simulations, draft_results_df, projection_lookup):
+    draft_results, teams = prepare_draft_results(draft_results_df)
+    avg_payouts = simulate_team_projections(draft_results, projection_lookup, num_simulations)
+    
+    # Prepare final results
+    final_results = pd.DataFrame({
+        'Team': teams,
+        'Average_Payout': avg_payouts
+    })
+    
+    return final_results
 
-# Upload projections CSV file
-uploaded_projections_file = st.file_uploader("Upload your Projections CSV file", type=["csv"])
+# Streamlit application
+st.title('Fantasy Sports Simulation')
 
-# Upload draft results CSV file
-uploaded_draft_file = st.file_uploader("Upload your Draft Results CSV file", type=["csv"])
+# Upload draft results CSV
+uploaded_file = st.file_uploader("Choose a draft results file (CSV)", type="csv")
 
-if uploaded_projections_file is not None and uploaded_draft_file is not None:
-    projections_df = pd.read_csv(uploaded_projections_file)
-    draft_results_df = pd.read_csv(uploaded_draft_file)
+if uploaded_file is not None:
+    draft_results_df = pd.read_csv(uploaded_file)
 
-    # Create projection lookup dictionary
-    projection_lookup = create_projection_lookup(projections_df)
+    # Number of simulations
+    num_simulations = st.number_input("Number of Simulations", min_value=1000, max_value=100000, value=10000, step=1000)
 
-    if projection_lookup:
-        # Prepare draft results
-        draft_results, teams = prepare_draft_results(draft_results_df)
+    # Create a projection lookup dictionary for quick access
+    projection_lookup = {
+        name: (projections[name]['proj'], projections[name]['projsd'])
+        for name in projections
+    }
 
-        # Run simulations
-        num_simulations = st.number_input("Number of simulations", min_value=1, value=1000)
-        if st.button("Run Simulation"):
-            avg_payouts = simulate_team_projections(draft_results, projection_lookup, num_simulations)
-            
-            # Prepare final results
-            final_results = pd.DataFrame({
-                'Team': teams,
-                'Average_Payout': avg_payouts
-            })
+    # Run simulations
+    if st.button('Run Simulations'):
+        with st.spinner('Simulating...'):
+            final_results = run_parallel_simulations(num_simulations, draft_results_df, projection_lookup)
+        
+        st.success('Simulations complete!')
 
-            # Display and download results
-            st.write(final_results)
-            csv = final_results.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="Download Payout Results",
-                data=csv,
-                file_name='payout_results.csv',
-                mime='text/csv',
-            )
+        # Display the final results
+        st.write(final_results)
+
+        # Option to download the results as a CSV
+        csv = final_results.to_csv(index=False)
+        st.download_button("Download Results", data=csv, file_name='simulation_results.csv', mime='text/csv')
