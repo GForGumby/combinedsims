@@ -41,8 +41,8 @@ def simulate_draft(df, starting_team_num, num_teams=6, num_rounds=6, team_bonus=
                 if df_filtered.empty:
                     continue
                 
-                # Adjust Simulated ADP based on team stacking, only if the bonus is enabled
                 if use_team_bonus:
+                    # Adjust Simulated ADP based on team stacking, only if the bonus is enabled
                     df_filtered['Adjusted ADP'] = df_filtered.apply(
                         lambda x: x['Simulated ADP'] * team_bonus 
                         if x['team'] in teams_stack[team_name] else x['Simulated ADP'],
@@ -116,7 +116,7 @@ if uploaded_file is not None:
     use_team_bonus = st.checkbox("Enable Team Stacking Bonus", value=False)
     
     # Team stacking bonus input, only enabled if checkbox is checked
-    team_bonus = st.number_input("Team stacking bonus", min_value=0.0, value=0.95 if use_team_bonus else 1.0, disabled=not use_team_bonus)
+    team_bonus = st.number_input("Team stacking bonus", min_value=0.0, value=0.95, disabled=not use_team_bonus)
     
     if st.button("Run Simulation"):
         all_drafts = run_simulations(df, num_simulations, num_teams, num_rounds, team_bonus, use_team_bonus)
