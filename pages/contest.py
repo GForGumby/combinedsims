@@ -137,10 +137,10 @@ if draft_file is not None and projection_file is not None:
     projections_df = pd.read_csv(projection_file)
     
     # Ensure the projections file has the necessary columns
-    if 'DFS_ID' in projections_df.columns and 'proj' in projections_df.columns and 'projsd' in projections_df.columns:
+    if 'player_name' in projections_df.columns and 'proj' in projections_df.columns and 'projsd' in projections_df.columns:
         # Create a projection lookup dictionary for quick access
         projection_lookup = {
-            str(row['DFS_ID']): (row['proj'], row['projsd']) 
+            str(row['player_name']): (row['proj'], row['projsd']) 
             for index, row in projections_df.iterrows()
         }
 
@@ -161,4 +161,4 @@ if draft_file is not None and projection_file is not None:
             csv = final_results.to_csv(index=False)
             st.download_button("Download Results", data=csv, file_name='simulation_results.csv', mime='text/csv')
     else:
-        st.error("Projections file must contain 'DFS_ID', 'proj', and 'projsd' columns.")
+        st.error("Projections file must contain 'player_name', 'proj', and 'projsd' columns.")
