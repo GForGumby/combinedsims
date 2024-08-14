@@ -3,16 +3,6 @@ import pandas as pd
 import numpy as np
 from numba import jit
 
-# Define player projections and standard deviations
-projections = {
-    "35327210": {'proj': 90.25, 'projsd': 50.8649},
-    # Add more projections as needed
-}
-
-# Convert projections dictionary to a NumPy structured array
-proj_dtype = np.dtype([('player_name', 'U50'), ('proj', 'f4'), ('projsd', 'f4')])
-projections_array = np.array([(name, projections[name]['proj'], projections[name]['projsd']) for name in projections], dtype=proj_dtype)
-
 # JIT compiled function to generate projection
 @jit(nopython=True)
 def generate_projection(median, std_dev):
@@ -139,30 +129,36 @@ def run_parallel_simulations(num_simulations, draft_results_df, projection_looku
 st.title('Fantasy Sports Simulation')
 
 # Upload draft results CSV
-uploaded_file = st.file_uploader("Choose a draft results file (CSV)", type="csv")
+draft_file = st.file_uploader("Choose a draft results file (CSV)", type="csv")
+projection_file = st.file_uploader("Choose a projections file (CSV)", type="csv")
 
-if uploaded_file is not None:
-    draft_results_df = pd.read_csv(uploaded_file)
+if draft_file is not None and projection_file is not None:
+    draft_results_df = pd.read_csv(draft_file)
+    projections_df = pd.read_csv(projection_file)
+    
+    # Ensure the projections file has the necessary columns
+    if 'DFS_ID' in projections_df.columns and 'proj' in projections_df.columns and 'projsd' in projections_df.columns:
+        # Create a projection lookup dictionary for quick access
+        projection_lookup = {
+            str(row['DFS_ID']): (row['proj'], row['projsd']) 
+            for index, row in projections_df.iterrows()
+        }
 
-    # Number of simulations
-    num_simulations = st.number_input("Number of Simulations", min_value=1000, max_value=100000, value=10000, step=1000)
+        # Number of simulations
+        num_simulations = st.number_input("Number of Simulations", min_value=1000, max_value=100000, value=10000, step=1000)
 
-    # Create a projection lookup dictionary for quick access
-    projection_lookup = {
-        name: (projections[name]['proj'], projections[name]['projsd'])
-        for name in projections
-    }
+        # Run simulations
+        if st.button('Run Simulations'):
+            with st.spinner('Simulating...'):
+                final_results = run_parallel_simulations(num_simulations, draft_results_df, projection_lookup)
+            
+            st.success('Simulations complete!')
 
-    # Run simulations
-    if st.button('Run Simulations'):
-        with st.spinner('Simulating...'):
-            final_results = run_parallel_simulations(num_simulations, draft_results_df, projection_lookup)
-        
-        st.success('Simulations complete!')
+            # Display the final results
+            st.write(final_results)
 
-        # Display the final results
-        st.write(final_results)
-
-        # Option to download the results as a CSV
-        csv = final_results.to_csv(index=False)
-        st.download_button("Download Results", data=csv, file_name='simulation_results.csv', mime='text/csv')
+            # Option to download the results as a CSV
+            csv = final_results.to_csv(index=False)
+            st.download_button("Download Results", data=csv, file_name='simulation_results.csv', mime='text/csv')
+    else:
+        st.error("Projections file must contain 'DFS_ID', 'proj', and 'projsd' columns.")
