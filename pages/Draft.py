@@ -1,13 +1,9 @@
 import streamlit as st
-
-
-st.title("Projections")
 import pandas as pd
 import numpy as np
-import streamlit as st
 
 # Function to simulate a single draft
-def simulate_draft(df, starting_team_num, num_teams=6, num_rounds=6, team_bonus=.95):
+def simulate_draft(df, starting_team_num, num_teams=6, num_rounds=6, team_bonus=1.0, use_team_bonus=False):
     df_copy = df.copy()
     df_copy['Simulated ADP'] = np.random.normal(df_copy['adp'], df_copy['adpsd'])
     df_copy.sort_values('Simulated ADP', inplace=True)
@@ -45,12 +41,15 @@ def simulate_draft(df, starting_team_num, num_teams=6, num_rounds=6, team_bonus=
                 if df_filtered.empty:
                     continue
                 
-                # Adjust Simulated ADP based on team stacking
-                df_filtered['Adjusted ADP'] = df_filtered.apply(
-                    lambda x: x['Simulated ADP'] * team_bonus 
-                    if x['team'] in teams_stack[team_name] else x['Simulated ADP'],
-                    axis=1
-                )
+                # Adjust Simulated ADP based on team stacking, only if the bonus is enabled
+                if use_team_bonus:
+                    df_filtered['Adjusted ADP'] = df_filtered.apply(
+                        lambda x: x['Simulated ADP'] * team_bonus 
+                        if x['team'] in teams_stack[team_name] else x['Simulated ADP'],
+                        axis=1
+                    )
+                else:
+                    df_filtered['Adjusted ADP'] = df_filtered['Simulated ADP']
                 
                 df_filtered.sort_values('Adjusted ADP', inplace=True)
                 
@@ -70,12 +69,12 @@ def simulate_draft(df, starting_team_num, num_teams=6, num_rounds=6, team_bonus=
     return teams
 
 # Function to run multiple simulations
-def run_simulations(df, num_simulations=10, num_teams=6, num_rounds=6, team_bonus=.95):
+def run_simulations(df, num_simulations=10, num_teams=6, num_rounds=6, team_bonus=1.0, use_team_bonus=False):
     all_drafts = []
 
     for sim_num in range(num_simulations):
         starting_team_num = sim_num * num_teams + 1
-        draft_result = simulate_draft(df, starting_team_num, num_teams, num_rounds, team_bonus)
+        draft_result = simulate_draft(df, starting_team_num, num_teams, num_rounds, team_bonus, use_team_bonus)
         all_drafts.append(draft_result)
     
     return all_drafts
@@ -112,12 +111,17 @@ if uploaded_file is not None:
     num_simulations = st.number_input("Number of simulations", min_value=1, value=10)
     num_teams = st.number_input("Number of teams", min_value=2, value=6)
     num_rounds = st.number_input("Number of rounds", min_value=1, value=6)
-    team_bonus = st.number_input("Team stacking bonus", min_value=0.0, value=0.95)
+
+    # Checkbox to enable team stacking bonus
+    use_team_bonus = st.checkbox("Enable Team Stacking Bonus", value=False)
+    
+    # Team stacking bonus input, only enabled if checkbox is checked
+    team_bonus = st.number_input("Team stacking bonus", min_value=0.0, value=0.95 if use_team_bonus else 1.0, disabled=not use_team_bonus)
     
     if st.button("Run Simulation"):
-        all_drafts = run_simulations(df, num_simulations, num_teams, num_rounds, team_bonus)
+        all_drafts = run_simulations(df, num_simulations, num_teams, num_rounds, team_bonus, use_team_bonus)
 
-         # Save the draft results to a DataFrame
+        # Save the draft results to a DataFrame
         draft_results = []
         for sim_num, draft in enumerate(all_drafts):
             for team, players in draft.items():
