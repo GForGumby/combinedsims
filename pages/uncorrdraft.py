@@ -70,8 +70,7 @@ if uploaded_file is not None:
                 }
                 for i, player in enumerate(players):
                     result_entry.update({
-                        f'Player_{i+1}_First_Name': player['first_name'],
-                        f'Player_{i+1}_Last_Name': player['last_name'],
+                        f'name': player['name'],
                         f'Player_{i+1}_Simulated_ADP': player['Simulated ADP']
                     })
                 draft_results.append(result_entry)
