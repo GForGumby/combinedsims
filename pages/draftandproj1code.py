@@ -9,6 +9,10 @@ def generate_projection(median, std_dev):
 
 # Combined function to simulate a single draft and projections
 def simulate_draft_and_projections(df, num_teams=6, num_rounds=6, team_bonus=0.95):
+    if 'adp' not in df.columns or 'adpsd' not in df.columns:
+        st.error("The uploaded file must contain 'adp' and 'adpsd' columns.")
+        return None
+    
     df_copy = df.copy()
     df_copy['Simulated ADP'] = np.random.normal(df_copy['adp'].values, df_copy['adpsd'].values)
     df_copy.sort_values('Simulated ADP', inplace=True)
@@ -78,6 +82,8 @@ def run_simulations(df, num_simulations=10, num_teams=6, num_rounds=6, team_bonu
 
     for sim_num in range(num_simulations):
         draft_result = simulate_draft_and_projections(df, num_teams, num_rounds, team_bonus)
+        if draft_result is None:
+            return None
         for team, players in draft_result.items():
             for player, points in players:
                 all_drafts[team].append({
@@ -115,17 +121,18 @@ if uploaded_file is not None:
     if st.button("Run Simulation"):
         all_drafts = run_simulations(df, num_simulations, num_teams, num_rounds, team_bonus)
 
-        # Create a Pandas Excel writer to save multiple sheets
-        with pd.ExcelWriter("draft_results_with_projections.xlsx", engine='xlsxwriter') as writer:
-            for team, results in all_drafts.items():
-                df_results = pd.DataFrame(results)
-                df_results.to_excel(writer, sheet_name=team, index=False)
-        
-        # Provide download link for the Excel file
-        with open("draft_results_with_projections.xlsx", "rb") as file:
-            st.download_button(
-                label="Download Draft Results",
-                data=file,
-                file_name="draft_results_with_projections.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+        if all_drafts is not None:
+            # Create a Pandas Excel writer to save multiple sheets using openpyxl
+            with pd.ExcelWriter("draft_results_with_projections.xlsx", engine='openpyxl') as writer:
+                for team, results in all_drafts.items():
+                    df_results = pd.DataFrame(results)
+                    df_results.to_excel(writer, sheet_name=team, index=False)
+            
+            # Provide download link for the Excel file
+            with open("draft_results_with_projections.xlsx", "rb") as file:
+                st.download_button(
+                    label="Download Draft Results",
+                    data=file,
+                    file_name="draft_results_with_projections.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
