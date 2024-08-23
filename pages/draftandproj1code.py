@@ -2,6 +2,13 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
+if 'logged_in' in st.session_state.keys():
+    if st.session_state['logged_in']:
+        st.markdown('## Ask Me Anything')
+        question = st.text_input('Ask your question')
+        if question != '':
+            st.write('I drink and I know things.')
+
 # Function to generate projection
 def generate_projection(median, std_dev):
     fluctuation = np.random.uniform(-0.01, 0.01) * median
