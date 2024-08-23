@@ -9,6 +9,10 @@ def generate_projection(median, std_dev):
 
 # Combined function to simulate a single draft and projections
 def simulate_draft_and_projections(df, num_teams=6, num_rounds=6, team_bonus=0.95):
+    if 'adp' not in df.columns or 'adpsd' not in df.columns:
+        st.error("The uploaded file must contain 'adp' and 'adpsd' columns.")
+        return None
+    
     df_copy = df.copy()
     df_copy['Simulated ADP'] = np.random.normal(df_copy['adp'].values, df_copy['adpsd'].values)
     df_copy.sort_values('Simulated ADP', inplace=True)
@@ -78,6 +82,8 @@ def run_simulations(df, num_simulations=10, num_teams=6, num_rounds=6, team_bonu
 
     for sim_num in range(num_simulations):
         draft_result = simulate_draft_and_projections(df, num_teams, num_rounds, team_bonus)
+        if draft_result is None:
+            return None
         for team, players in draft_result.items():
             result_entry = {
                 'Simulation': sim_num + 1,
@@ -104,6 +110,9 @@ uploaded_file = st.file_uploader("Upload your ADP CSV file", type=["csv"])
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
 
+    # Display the columns in the uploaded file
+    st.write("Columns in the uploaded file:", df.columns.tolist())
+
     # Check if player_id exists, if not, create it
     if 'player_id' not in df.columns:
         df['player_id'] = df.index
@@ -120,14 +129,15 @@ if uploaded_file is not None:
     if st.button("Run Simulation"):
         final_results = run_simulations(df, num_simulations, num_teams, num_rounds, team_bonus)
 
-        # Display the results
-        st.dataframe(final_results)
-        
-        # Download link for the results
-        csv = final_results.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Download Draft Results",
-            data=csv,
-            file_name='draft_results_with_projections.csv',
-            mime='text/csv',
-        )
+        if final_results is not None:
+            # Display the results
+            st.dataframe(final_results)
+            
+            # Download link for the results
+            csv = final_results.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="Download Draft Results",
+                data=csv,
+                file_name='draft_results_with_projections.csv',
+                mime='text/csv',
+            )
