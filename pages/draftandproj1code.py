@@ -82,6 +82,7 @@ def run_simulations(df, num_simulations=10, num_teams=6, num_rounds=6, team_bonu
             result_entry = {
                 'Simulation': sim_num + 1,
                 'Team': team,
+                'Total_Simulated_Points': sum(points for _, points in players)  # Calculate the sum of points for the team
             }
             for i, (player, points) in enumerate(players):
                 result_entry.update({
