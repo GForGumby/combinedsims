@@ -1,10 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import st_paywall as paywall
-
-# Set up the paywall
-paywall.configure(api_key="your_api_key_here", product_id="your_product_id_here")
 
 # Function to generate projection
 def generate_projection(median, std_dev):
@@ -102,45 +98,40 @@ def run_simulations(df, num_simulations=10, num_teams=6, num_rounds=6, team_bonu
 # Streamlit app
 st.title('Fantasy Sports Draft Simulation with Projections')
 
-# Implement the paywall
-if paywall.paid():
-    # File upload
-    uploaded_file = st.file_uploader("Upload your ADP CSV file", type=["csv"])
+# File upload
+uploaded_file = st.file_uploader("Upload your ADP CSV file", type=["csv"])
 
-    if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
 
-        # Display the columns in the uploaded file
-        st.write("Columns in the uploaded file:", df.columns.tolist())
+    # Display the columns in the uploaded file
+    st.write("Columns in the uploaded file:", df.columns.tolist())
 
-        # Check if player_id exists, if not, create it
-        if 'player_id' not in df.columns:
-            df['player_id'] = df.index
+    # Check if player_id exists, if not, create it
+    if 'player_id' not in df.columns:
+        df['player_id'] = df.index
 
-        st.write("Data Preview:")
-        st.dataframe(df.head())
+    st.write("Data Preview:")
+    st.dataframe(df.head())
 
-        # Parameters for the simulation
-        num_simulations = st.number_input("Number of simulations", min_value=1, value=10)
-        num_teams = st.number_input("Number of teams", min_value=2, value=6)
-        num_rounds = st.number_input("Number of rounds", min_value=1, value=6)
-        team_bonus = st.number_input("Team stacking bonus", min_value=0.0, value=0.95)
+    # Parameters for the simulation
+    num_simulations = st.number_input("Number of simulations", min_value=1, value=10)
+    num_teams = st.number_input("Number of teams", min_value=2, value=6)
+    num_rounds = st.number_input("Number of rounds", min_value=1, value=6)
+    team_bonus = st.number_input("Team stacking bonus", min_value=0.0, value=0.95)
 
-        if st.button("Run Simulation"):
-            final_results = run_simulations(df, num_simulations, num_teams, num_rounds, team_bonus)
+    if st.button("Run Simulation"):
+        final_results = run_simulations(df, num_simulations, num_teams, num_rounds, team_bonus)
 
-            if final_results is not None:
-                # Display the results
-                st.dataframe(final_results)
+        if final_results is not None:
+            # Display the results
+            st.dataframe(final_results)
 
-                # Download link for the results
-                csv = final_results.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="Download Draft Results",
-                    data=csv,
-                    file_name='draft_results_with_projections.csv',
-                    mime='text/csv',
-                )
-else:
-    st.write("Please unlock to access this feature.")
-    paywall.show_paywall()
+            # Download link for the results
+            csv = final_results.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="Download Draft Results",
+                data=csv,
+                file_name='draft_results_with_projections.csv',
+                mime='text/csv',
+            )
