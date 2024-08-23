@@ -9,7 +9,6 @@ def generate_projection(median, std_dev):
 
 # Combined function to simulate a single draft and projections
 def simulate_draft_and_projections(df, num_teams=6, num_rounds=6, team_bonus=0.95):
-    # Generate simulated ADP outside of the loop to avoid redundant calculations
     df['Simulated ADP'] = np.random.normal(df['adp'].values, df['adpsd'].values)
     df.sort_values('Simulated ADP', inplace=True)
 
@@ -25,23 +24,25 @@ def simulate_draft_and_projections(df, num_teams=6, num_rounds=6, team_bonus=0.9
             team_name = f'Team {pick_num+1}'
 
             # Filter players based on positional requirements
+            draftable_positions = []
             if team_positions[team_name]["QB"] < 1:
-                draftable_positions = ['QB']
-            elif team_positions[team_name]["RB"] < 1:
-                draftable_positions = ['RB']
-            elif team_positions[team_name]["WR"] < 2:
-                draftable_positions = ['WR']
-            elif team_positions[team_name]["TE"] < 1:
-                draftable_positions = ['TE']
-            else:
-                draftable_positions = ['RB', 'WR']
+                draftable_positions.append('QB')
+            if team_positions[team_name]["RB"] < 1:
+                draftable_positions.append('RB')
+            if team_positions[team_name]["WR"] < 2:
+                draftable_positions.append('WR')
+            if team_positions[team_name]["TE"] < 1:
+                draftable_positions.append('TE')
+            if team_positions[team_name]["FLEX"] < 1 and (team_positions[team_name]["RB"] + team_positions[team_name]["WR"] < 5):
+                draftable_positions.append('FLEX')
 
-            df_filtered = df[df['position'].isin(draftable_positions)]
+            df_filtered = df[df['position'].isin(draftable_positions) | 
+                             (df['position'].isin(['RB', 'WR']) & df['position'].isin(['RB', 'WR']))]
 
             if len(df_filtered) == 0:
                 continue
 
-            if team_bonus != 1.0:  # Only apply team bonus if it's different from 1.0
+            if team_bonus != 1.0:
                 df_filtered['Adjusted ADP'] = np.where(
                     df_filtered['team'].isin(teams_stack[team_name]),
                     df_filtered['Simulated ADP'] * team_bonus,
@@ -81,7 +82,7 @@ def run_simulations(df, num_simulations=10, num_teams=6, num_rounds=6, team_bonu
             result_entry = {
                 'Simulation': sim_num + 1,
                 'Team': team,
-                'Total_Simulated_Points': sum(points for _, points in players)  # Calculate the sum of points for the team
+                'Total_Simulated_Points': sum(points for _, points in players)
             }
             for i, (player, points) in enumerate(players):
                 result_entry.update({
