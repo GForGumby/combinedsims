@@ -1,16 +1,13 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from numba import jit, njit
 
-# JIT compiled function to generate projection
-@njit
+# Function to generate projection
 def generate_projection(median, std_dev):
     fluctuation = np.random.uniform(-0.01, 0.01) * median
     return max(0, np.random.normal(median, std_dev) + fluctuation)
 
 # Combined function to simulate a single draft and projections
-@njit
 def simulate_draft_and_projections(df, num_teams=6, num_rounds=6, team_bonus=0.95):
     df_copy = df.copy()
     df_copy['Simulated ADP'] = np.random.normal(df_copy['adp'].values, df_copy['adpsd'].values)
@@ -110,7 +107,7 @@ if uploaded_file is not None:
     if st.button("Run Simulation"):
         all_drafts = run_simulations(df, num_simulations, num_teams, num_rounds, team_bonus)
 
-         # Save the draft results to a DataFrame
+        # Save the draft results to a DataFrame
         draft_results = []
         for sim_num, draft in enumerate(all_drafts):
             for team, players in draft.items():
