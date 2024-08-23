@@ -14,16 +14,16 @@ def simulate_draft_and_projections(df, num_teams=6, num_rounds=6, team_bonus=0.9
     df_copy.sort_values('Simulated ADP', inplace=True)
     
     # Initialize the teams
-    teams = {f'Team {i}': [] for i in range(num_teams)}
-    team_positions = {f'Team {i}': {"QB": 0, "RB": 0, "WR": 0, "TE": 0, "FLEX": 0} for i in range(num_teams)}
-    teams_stack = {f'Team {i}': [] for i in range(num_teams)}
+    teams = {f'Team {i+1}': [] for i in range(num_teams)}
+    team_positions = {f'Team {i+1}': {"QB": 0, "RB": 0, "WR": 0, "TE": 0, "FLEX": 0} for i in range(num_teams)}
+    teams_stack = {f'Team {i+1}': [] for i in range(num_teams)}
     
     # Snake draft order
     for round_num in range(num_rounds):
         draft_order = list(range(num_teams)) if round_num % 2 == 0 else list(range(num_teams))[::-1]
         for pick_num in draft_order:
             if len(df_copy) > 0:
-                team_name = f'Team {pick_num}'
+                team_name = f'Team {pick_num+1}'
                 
                 # Filter players based on positional requirements
                 draftable_positions = []
@@ -72,13 +72,21 @@ def simulate_draft_and_projections(df, num_teams=6, num_rounds=6, team_bonus=0.9
     
     return teams
 
-# Function to run multiple simulations
+# Function to run multiple simulations and organize results by draft position
 def run_simulations(df, num_simulations=10, num_teams=6, num_rounds=6, team_bonus=0.95):
-    all_drafts = []
+    all_drafts = {f'Team {i+1}': [] for i in range(num_teams)}
 
     for sim_num in range(num_simulations):
         draft_result = simulate_draft_and_projections(df, num_teams, num_rounds, team_bonus)
-        all_drafts.append(draft_result)
+        for team, players in draft_result.items():
+            for player, points in players:
+                all_drafts[team].append({
+                    'Simulation': sim_num + 1,
+                    'Player_Name': player['name'],
+                    'Position': player['position'],
+                    'Team': player['team'],
+                    'Simulated_Points': points
+                })
     
     return all_drafts
 
@@ -107,33 +115,17 @@ if uploaded_file is not None:
     if st.button("Run Simulation"):
         all_drafts = run_simulations(df, num_simulations, num_teams, num_rounds, team_bonus)
 
-        # Save the draft results to a DataFrame
-        draft_results = []
-        for sim_num, draft in enumerate(all_drafts):
-            for team, players in draft.items():
-                result_entry = {
-                    'Simulation': sim_num + 1,
-                    'Team': team,
-                }
-                for i, (player, points) in enumerate(players):
-                    result_entry.update({
-                        f'Player_{i+1}_Name': player['name'],
-                        f'Player_{i+1}_Position': player['position'],
-                        f'Player_{i+1}_Team': player['team'],
-                        f'Player_{i+1}_Simulated_Points': points
-                    })
-                draft_results.append(result_entry)
+        # Create a Pandas Excel writer to save multiple sheets
+        with pd.ExcelWriter("draft_results_with_projections.xlsx", engine='xlsxwriter') as writer:
+            for team, results in all_drafts.items():
+                df_results = pd.DataFrame(results)
+                df_results.to_excel(writer, sheet_name=team, index=False)
         
-        draft_results_df = pd.DataFrame(draft_results)
-        
-        # Display the results
-        st.dataframe(draft_results_df)
-        
-        # Download link for the results
-        csv = draft_results_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Download Draft Results",
-            data=csv,
-            file_name='draft_results_with_projections.csv',
-            mime='text/csv',
-        )
+        # Provide download link for the Excel file
+        with open("draft_results_with_projections.xlsx", "rb") as file:
+            st.download_button(
+                label="Download Draft Results",
+                data=file,
+                file_name="draft_results_with_projections.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
