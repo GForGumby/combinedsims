@@ -2,15 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-from st_paywall import add_auth
-
-add_auth(required=True)
-
-#after authentication, the email and subscription status is stored in session state
-st.write(st.session_state.email)
-st.write(st.session_state.user_subscribed)
-
-
 # Function to generate projection
 def generate_projection(median, std_dev):
     fluctuation = np.random.uniform(-0.01, 0.01) * median
